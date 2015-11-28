@@ -1,0 +1,12 @@
+{application, queuesk,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { queuesk_app, []}},
+  {env, []}
+ ]}.
