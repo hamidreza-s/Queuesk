@@ -13,10 +13,12 @@ start_link() ->
     {ok, spawn_link(fun loop/0)}.
 
 loop() ->
+    idle().
+
+idle() ->
     receive
-	stop ->
-	    ok;
+	touch ->
+	    loop();
 	_ ->
-	    todo,
-	    loop()
+	    idle()
     end.

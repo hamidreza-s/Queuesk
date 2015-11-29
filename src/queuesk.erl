@@ -5,7 +5,9 @@
 
 -export([add_queue/2,
 	 remove_queue/1,
+	 list_queues/0,
 	 get_queue/1,
+	 make_queue_id/1,
 	 get_queue_id/1]).
 
 -export([priority_push_task/3,
@@ -41,12 +43,8 @@ add_queue(QueueName, Opts)
     {ok, DefaultType} = queuesk_utils:get_config(default_queue_type),
     {ok, DefaultPersist} = queuesk_utils:get_config(default_queue_persist),
     {ok, DefaultParallel} = queuesk_utils:get_config(default_queue_parallel),
-    {ok, QueueIDPrefix} = queuesk_utils:get_config(queue_id_prefix),
 
-    QueueID = list_to_atom(
-		atom_to_list(QueueIDPrefix)
-		++ "_"
-		++ atom_to_list(QueueName)),
+    QueueID = make_queue_id(QueueName),
 		
     NewOpts = [{queue_id, QueueID},
 	       {type, proplists:get_value(type, Opts, DefaultType)},
@@ -97,7 +95,23 @@ get_queue_id(QueueName) ->
 	_ ->
 	    not_exist
     end.
-    
+
+%%--------------------------------------------------------------------
+%% make_queue_id
+%%--------------------------------------------------------------------
+make_queue_id(QueueName) ->
+    {ok, QueueIDPrefix} = queuesk_utils:get_config(queue_id_prefix),    
+    list_to_atom(
+      atom_to_list(QueueIDPrefix)
+      ++ "_"
+      ++ atom_to_list(QueueName)).
+
+%%--------------------------------------------------------------------
+%% list_queues
+%%--------------------------------------------------------------------
+list_queues() ->
+    mnesia:dirty_select(qsk_queue_registery, [{'_',[],['$_']}]).
+
 %%===================================================================
 %% Priority Queue API
 %%===================================================================
@@ -108,6 +122,9 @@ get_queue_id(QueueName) ->
 add_priority_queue(QueueName, Opts) ->
     
     QueueID = proplists:get_value(queue_id, Opts),
+    Type = proplists:get_value(type, Opts),
+    Persist = proplists:get_value(persist, Opts),
+    Parallel = proplists:get_value(parallel, Opts),
     Storage = case proplists:get_value(persist, Opts) of
 		  true ->
 		      disc_copies;
@@ -121,6 +138,11 @@ add_priority_queue(QueueName, Opts) ->
 				  {attributes, 
 				   record_info(fields, 
 					       qsk_queue_priority_schema)}]),
+
+    true = ets:insert(qsk_queue_info, #qsk_queue_info{
+					 queue_id = QueueID,
+					 parallel = Parallel,
+					 empty = true}),
     
     case Result of
 	{atomic, ok} ->
@@ -128,9 +150,9 @@ add_priority_queue(QueueName, Opts) ->
 		   #qsk_queue_registery{
 		      queue_id = QueueID,
 		      queue_name = QueueName,
-		      type = proplists:get_value(type, Opts),
-		      persist = proplists:get_value(persist, Opts),
-		      parallel = proplists:get_value(parallel, Opts)}),
+		      type = Type,
+		      persist = Persist,
+		      parallel = Parallel}),
 	    {ok, QueueID};
 	Else ->
 	    Else
