@@ -7,6 +7,12 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, { queuesk_app, []}},
-  {env, []}
+  {mod, {queuesk_app, []}},
+  {env, [
+	 {queue_id_prefix, qsk_queue},
+	 {pool_workers_number, 10},
+	 {default_queue_type, priority},
+	 {default_queue_persist, false},
+	 {default_queue_parallel, false}
+	]}
  ]}.

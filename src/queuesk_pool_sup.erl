@@ -1,11 +1,12 @@
--module(queuesk_sup).
+-module(queuesk_pool_sup).
 -behaviour(supervisor).
 
--export([start_link/0]).
--export([init/1]).
+-export([start_link/0,
+	 add_worker/0,
+	 init/1]).
 
 %%===================================================================
-%% API functions
+%% Supervisor API
 %%===================================================================
 
 %%--------------------------------------------------------------------
@@ -14,28 +15,26 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
+%%--------------------------------------------------------------------
+%% add_worker
+%%--------------------------------------------------------------------
+add_worker() ->
+    supervisor:start_child(?MODULE, []).
+
 %%===================================================================
-%% Supervisor callbacks
+%% Supervisor Callbacks
 %%===================================================================
 
 %%--------------------------------------------------------------------
 %% init
 %%--------------------------------------------------------------------
 init([]) ->
-    QueueskPoolSup = {queuesk_pool_sup,
-		      {queuesk_pool_sup, start_link, []},
-		      permanent,
-		      3000,
-		      supervisor,
-		      [queuesk_pool_sup]},
-    
-    QueueskManager = {queuesk_manager,
-		      {queuesk_manager, start_link, []},
-		      permanent,
-		      3000,
-		      worker,
-		      [queuesk_manager]},
-    
-    {ok, {{one_for_all, 5, 10},
-	  [QueueskPoolSup, QueueskManager]}}.
-
+    {ok, {{simple_one_for_one, 5, 10},
+	  [
+	   {queuesk_pool_worker,
+	    {queuesk_pool_worker, start_link, []},
+	    permanent,
+	    3000,
+	    worker,
+	    [queuesk_pool_worker]}
+	  ]}}.
