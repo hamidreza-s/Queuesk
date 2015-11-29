@@ -4,6 +4,7 @@
 	 stop/0]).
 
 -export([add_queue/2,
+	 remove_queue/1,
 	 get_queue/1,
 	 get_queue_id/1]).
 
@@ -67,6 +68,15 @@ do_add_queue(QueueName, Opts) ->
     end.
 
 %%--------------------------------------------------------------------
+%% remove_queue
+%%--------------------------------------------------------------------
+remove_queue(QueueName) ->
+    {ok, QueueID} = get_queue_id(QueueName),
+    {atomic, ok} = mnesia:delete_table(QueueID),
+    ok = mnesia:dirty_delete({qsk_queue_registery, QueueName}),
+    ok.
+    
+%%--------------------------------------------------------------------
 %% get_queue
 %%--------------------------------------------------------------------
 get_queue(QueueName) ->
@@ -83,7 +93,7 @@ get_queue(QueueName) ->
 get_queue_id(QueueName) ->
     case get_queue(QueueName) of
 	{ok, #qsk_queue_registery{queue_id = QueueID}} ->
-	    QueueID;
+	    {ok, QueueID};
 	_ ->
 	    not_exist
     end.

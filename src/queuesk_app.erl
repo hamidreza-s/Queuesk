@@ -44,6 +44,7 @@ init_database() ->
     
     mnesia:create_table(qsk_queue_registery, 
 			[{type, ordered_set},
+			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, qsk_queue_registery)}]),
 
     ok.
