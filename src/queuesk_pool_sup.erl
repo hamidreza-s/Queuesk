@@ -2,7 +2,7 @@
 -behaviour(supervisor).
 
 -export([start_link/0,
-	 add_worker/0,
+	 add_worker/1,
 	 init/1]).
 
 %%===================================================================
@@ -18,8 +18,8 @@ start_link() ->
 %%--------------------------------------------------------------------
 %% add_worker
 %%--------------------------------------------------------------------
-add_worker() ->
-    supervisor:start_child(?MODULE, []).
+add_worker(Queue) ->
+    supervisor:start_child(?MODULE, [Queue]).
 
 %%===================================================================
 %% Supervisor Callbacks

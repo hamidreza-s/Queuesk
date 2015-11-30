@@ -47,9 +47,6 @@ init_database() ->
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, qsk_queue_registery)}]),
 
-    ets:new(qsk_queue_info, [set, public, named_table,
-			     {keypos, 2},
-			     {write_concurrency, false},
-			     {read_concurrency, true}]),
+    mnesia:wait_for_tables([qsk_queue_registery], 5000),
 
     ok.

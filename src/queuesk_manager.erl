@@ -31,9 +31,10 @@ start_link() ->
 %%--------------------------------------------------------------------
 init([]) ->
     
-
     ok = init_workers_pool(),
-    ok = init_queue_info(),
+
+    %% @TODO: check if there are remaining tasks from last halt
+    %% @
 
     {ok, undefined}.
 
@@ -74,30 +75,10 @@ code_change(_OldVsn, State, _Extra) ->
 %% init_workers_pool
 %%--------------------------------------------------------------------
 init_workers_pool() ->
-    {ok, WorkerPool} = queuesk_utils:get_config(pool_workers_number),
-    [queuesk_pool_sup:add_worker() || _ <- lists:seq(1, WorkerPool)],
-    
-    ok.
 
-%%--------------------------------------------------------------------
-%% init_queue_info
-%%--------------------------------------------------------------------
-init_queue_info() ->
-    Queues = queuesk:list_queues(),
+    Queues = queuesk:queue_list(),
     [begin
-	 ID = Queue#qsk_queue_registery.queue_id,
-	 Parallel = Queue#qsk_queue_registery.parallel,
-	 Empty = case mnesia:table_info(ID, size) of
-		     0 ->
-			 true;
-		     _ ->
-			 false
-		 end,
-
-	 ets:insert(qsk_queue_info,
-		    #qsk_queue_info{queue_id = ID,
-				    parallel = Parallel,
-				    empty = Empty})
+	 queuesk_pool_sup:add_worker(Queue)
      end || Queue <- Queues],
-
+    
     ok.

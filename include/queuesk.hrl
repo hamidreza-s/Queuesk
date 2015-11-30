@@ -5,33 +5,28 @@
 %%--------------------------------------------------------------------
 %% qsk_queue_registery
 %%--------------------------------------------------------------------
--record(qsk_queue_registery, {queue_name, queue_id, type, persist, parallel}).
+-record(qsk_queue_registery, {queue_name, queue_id, type, persist, workers}).
 
 %%--------------------------------------------------------------------
-%% qsk_queue_priority_schema
+%% qsk_queue_schema
 %%--------------------------------------------------------------------
--record(qsk_queue_priority_schema, {priority, task}).
+-record(qsk_queue_schema, {priority, task}).
 
 %%--------------------------------------------------------------------
-%% qsk_queue_priority_record
+%% qsk_queue_record
 %%--------------------------------------------------------------------
--record(qsk_queue_priority_record, {priority, task, queue_id}).
-
-%%--------------------------------------------------------------------
-%% qsk_queue_info
-%%--------------------------------------------------------------------
--record(qsk_queue_info, {queue_id, parallel, empty}).
+-record(qsk_queue_record, {priority, task, queue_id}).
 
 %%===================================================================
 %% Macros
 %%===================================================================
 
 %%--------------------------------------------------------------------
-%% priority record
+%% queue record
 %%--------------------------------------------------------------------
--define(PRIORITY_REC(R), {R#qsk_queue_priority_record.queue_id,
-			  R#qsk_queue_priority_record.priority,
-			  R#qsk_queue_priority_record.task}).
+-define(QUEUE_REC(R), {R#qsk_queue_record.queue_id,
+		       R#qsk_queue_record.priority,
+		       R#qsk_queue_record.task}).
 
 %%--------------------------------------------------------------------
 %% supervisor child

@@ -3,22 +3,22 @@
 -export([start/0, 
 	 stop/0]).
 
--export([add_queue/2,
-	 remove_queue/1,
-	 list_queues/0,
-	 get_queue/1,
-	 make_queue_id/1,
-	 get_queue_id/1]).
+-export([queue_add/2,
+	 queue_remove/1,
+	 queue_list/0,
+	 queue_get/1,
+	 queue_make_id/1,
+	 queue_get_id/1]).
 
--export([priority_push_task/3,
-	 priority_pop_task/1,
-	 priority_peek_task/1,
-	 priority_remove_task/2]).
+-export([task_push/3,
+	 task_pop/1,
+	 task_peek/1,
+	 task_remove/2]).
 
 -include("queuesk.hrl").
 
 %%===================================================================
-%% API
+%% Queue API
 %%===================================================================
 
 %%--------------------------------------------------------------------
@@ -34,97 +34,33 @@ stop() ->
     application:stop(?MODULE).
 
 %%--------------------------------------------------------------------
-%% add_queue
+%% queue_add
 %%--------------------------------------------------------------------
-add_queue(QueueName, Opts) 
+queue_add(QueueName, Opts) 
   when is_atom(QueueName),
        is_list(Opts) ->
     
     {ok, DefaultType} = queuesk_utils:get_config(default_queue_type),
     {ok, DefaultPersist} = queuesk_utils:get_config(default_queue_persist),
-    {ok, DefaultParallel} = queuesk_utils:get_config(default_queue_parallel),
+    {ok, DefaultWorkers} = queuesk_utils:get_config(default_queue_workers),
 
-    QueueID = make_queue_id(QueueName),
+    QueueID = queue_make_id(QueueName),
 		
     NewOpts = [{queue_id, QueueID},
 	       {type, proplists:get_value(type, Opts, DefaultType)},
 	       {persist, proplists:get_value(persist, Opts, DefaultPersist)},
-	       {parallel, proplists:get_value(parallel, Opts, DefaultParallel)}],
+	       {workers, proplists:get_value(workers, Opts, DefaultWorkers)}],
 
-    do_add_queue(QueueName, NewOpts).
+    do_queue_add(QueueName, NewOpts).
 
-do_add_queue(QueueName, Opts) ->
-    case proplists:get_value(type, Opts) of
-	priority ->
-	    add_priority_queue(QueueName, Opts);
-	scheduler ->
-	    todo;
-	lifo ->
-	    todo;
-	fifi ->
-	    todo
-    end.
-
-%%--------------------------------------------------------------------
-%% remove_queue
-%%--------------------------------------------------------------------
-remove_queue(QueueName) ->
-    {ok, QueueID} = get_queue_id(QueueName),
-    {atomic, ok} = mnesia:delete_table(QueueID),
-    ok = mnesia:dirty_delete({qsk_queue_registery, QueueName}),
-    ok.
+do_queue_add(QueueName, Opts) ->
     
-%%--------------------------------------------------------------------
-%% get_queue
-%%--------------------------------------------------------------------
-get_queue(QueueName) ->
-    case mnesia:dirty_read({qsk_queue_registery, QueueName}) of
-	[QueueRec] ->
-	    {ok, QueueRec};
-	[] ->
-	    not_exist
-    end.
+    %% @TODO: make following action transactional and idempotent
 
-%%--------------------------------------------------------------------
-%% get_queue_id
-%%--------------------------------------------------------------------
-get_queue_id(QueueName) ->
-    case get_queue(QueueName) of
-	{ok, #qsk_queue_registery{queue_id = QueueID}} ->
-	    {ok, QueueID};
-	_ ->
-	    not_exist
-    end.
-
-%%--------------------------------------------------------------------
-%% make_queue_id
-%%--------------------------------------------------------------------
-make_queue_id(QueueName) ->
-    {ok, QueueIDPrefix} = queuesk_utils:get_config(queue_id_prefix),    
-    list_to_atom(
-      atom_to_list(QueueIDPrefix)
-      ++ "_"
-      ++ atom_to_list(QueueName)).
-
-%%--------------------------------------------------------------------
-%% list_queues
-%%--------------------------------------------------------------------
-list_queues() ->
-    mnesia:dirty_select(qsk_queue_registery, [{'_',[],['$_']}]).
-
-%%===================================================================
-%% Priority Queue API
-%%===================================================================
-
-%%--------------------------------------------------------------------
-%% add_priority_queue
-%%--------------------------------------------------------------------
-add_priority_queue(QueueName, Opts) ->
-    
     QueueID = proplists:get_value(queue_id, Opts),
     Type = proplists:get_value(type, Opts),
     Persist = proplists:get_value(persist, Opts),
-    Parallel = proplists:get_value(parallel, Opts),
+    Workers = proplists:get_value(workers, Opts),
     Storage = case proplists:get_value(persist, Opts) of
 		  true ->
 		      disc_copies;
@@ -137,40 +73,91 @@ add_priority_queue(QueueName, Opts) ->
 				  {Storage, [node()]},
 				  {attributes, 
 				   record_info(fields, 
-					       qsk_queue_priority_schema)}]),
+					       qsk_queue_schema)}]),
 
-    true = ets:insert(qsk_queue_info, #qsk_queue_info{
-					 queue_id = QueueID,
-					 parallel = Parallel,
-					 empty = true}),
-    
     case Result of
 	{atomic, ok} ->
-	    ok = mnesia:dirty_write(
-		   #qsk_queue_registery{
-		      queue_id = QueueID,
-		      queue_name = QueueName,
-		      type = Type,
-		      persist = Persist,
-		      parallel = Parallel}),
+	    Queue = #qsk_queue_registery{
+		       queue_id = QueueID,
+		       queue_name = QueueName,
+		       type = Type,
+		       persist = Persist,
+		       workers = Workers},
+
+	    ok = mnesia:dirty_write(Queue),
+	    {ok, _QueueWorkerPID} = queuesk_pool_sup:add_worker(Queue),
+	    
 	    {ok, QueueID};
 	Else ->
 	    Else
     end.
 
 %%--------------------------------------------------------------------
-%% priority_push_task
+%% queue_remove
 %%--------------------------------------------------------------------
-priority_push_task(QueueID, Priority, Task) ->
-    Rec = #qsk_queue_priority_record{priority = {Priority, ?NOW_TIMESTAMP},
-				     task = Task,
-				     queue_id = QueueID},
-    mnesia:dirty_write(?PRIORITY_REC(Rec)).
+queue_remove(QueueName) ->
+    {ok, QueueID} = queue_get_id(QueueName),
+    {atomic, ok} = mnesia:delete_table(QueueID),
+    ok = mnesia:dirty_delete({qsk_queue_registery, QueueName}),
+    ok.
+    
+%%--------------------------------------------------------------------
+%% queue_get
+%%--------------------------------------------------------------------
+queue_get(QueueName) ->
+    case mnesia:dirty_read({qsk_queue_registery, QueueName}) of
+	[QueueRec] ->
+	    {ok, QueueRec};
+	[] ->
+	    not_exist
+    end.
 
 %%--------------------------------------------------------------------
-%% priority_pop_task
+%% queue_get_id
 %%--------------------------------------------------------------------
-priority_pop_task(QueueID) ->
+queue_get_id(QueueName) ->
+    case queue_get(QueueName) of
+	{ok, #qsk_queue_registery{queue_id = QueueID}} ->
+	    {ok, QueueID};
+	_ ->
+	    not_exist
+    end.
+
+%%--------------------------------------------------------------------
+%% queue_make_id
+%%--------------------------------------------------------------------
+queue_make_id(QueueName) ->
+    {ok, QueueIDPrefix} = queuesk_utils:get_config(queue_id_prefix),    
+    list_to_atom(
+      atom_to_list(QueueIDPrefix)
+      ++ "_"
+      ++ atom_to_list(QueueName)).
+
+%%--------------------------------------------------------------------
+%% queue_list
+%%--------------------------------------------------------------------
+queue_list() ->
+    mnesia:dirty_select(qsk_queue_registery, [{'_',[],['$_']}]).
+
+%%===================================================================
+%% Task API
+%%===================================================================
+
+%%--------------------------------------------------------------------
+%% task_push
+%%--------------------------------------------------------------------
+task_push(QueueID, TaskPriority, TaskFunc) ->
+    TaskRec = #qsk_queue_record{priority = {TaskPriority, ?NOW_TIMESTAMP},
+				task = TaskFunc,
+				queue_id = QueueID},
+    ok = mnesia:dirty_write(?QUEUE_REC(TaskRec)),
+    ok = queuesk_pool_worker:submit_task(QueueID, TaskRec),
+    ok.
+
+%%--------------------------------------------------------------------
+%% task_pop
+%%--------------------------------------------------------------------
+task_pop(QueueID) ->
     Key = mnesia:dirty_first(QueueID),
     mnesia:activity(
       transaction,
@@ -185,14 +172,14 @@ priority_pop_task(QueueID) ->
       end).
 
 %%--------------------------------------------------------------------
-%% priority_peek_task
+%% task_peek
 %%--------------------------------------------------------------------
-priority_peek_task(QueueID) ->
+task_peek(QueueID) ->
     Key = mnesia:dirty_first(QueueID),
     mnesia:dirty_read(QueueID, Key).
 
 %%--------------------------------------------------------------------
-%% priority_remove_task
+%% task_remove
 %%--------------------------------------------------------------------
-priority_remove_task(QueueID, Key) ->
+task_remove(QueueID, Key) ->
     mnesia:dirty_delete({QueueID, Key}).
