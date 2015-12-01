@@ -28,13 +28,12 @@ start_link() ->
 
 %%--------------------------------------------------------------------
 %% init
-%%--------------------------------------------------------------------
+%--------------------------------------------------------------------
 init([]) ->
     
-    ok = init_workers_pool(),
+    ok = init_schedulers_pool(),
 
     %% @TODO: check if there are remaining tasks from last halt
-    %% @
 
     {ok, undefined}.
 
@@ -72,13 +71,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 
 %%--------------------------------------------------------------------
-%% init_workers_pool
+%% init_schedulers_pool
 %%--------------------------------------------------------------------
-init_workers_pool() ->
+init_schedulers_pool() ->
 
     Queues = queuesk:queue_list(),
     [begin
-	 queuesk_pool_sup:add_worker(Queue)
+	 queuesk_pool_sup:add_scheduler(Queue)
      end || Queue <- Queues],
     
     ok.

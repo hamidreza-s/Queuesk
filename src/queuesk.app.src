@@ -9,9 +9,13 @@
                  ]},
   {mod, {queuesk_app, []}},
   {env, [
+	 {mode, development},
 	 {queue_id_prefix, qsk_queue},
 	 {default_queue_type, priority},
 	 {default_queue_persist, false},
-	 {default_queue_workers, 1}
+	 {default_queue_schedulers, 1},
+	 {default_task_priority, 1},
+	 {default_task_retry, 1},
+	 {default_task_timeout, 3000}
 	]}
  ]}.

@@ -42,14 +42,14 @@ queue_add(QueueName, Opts)
     
     {ok, DefaultType} = queuesk_utils:get_config(default_queue_type),
     {ok, DefaultPersist} = queuesk_utils:get_config(default_queue_persist),
-    {ok, DefaultWorkers} = queuesk_utils:get_config(default_queue_workers),
+    {ok, DefaultSchedulers} = queuesk_utils:get_config(default_queue_schedulers),
 
     QueueID = queue_make_id(QueueName),
 		
     NewOpts = [{queue_id, QueueID},
 	       {type, proplists:get_value(type, Opts, DefaultType)},
 	       {persist, proplists:get_value(persist, Opts, DefaultPersist)},
-	       {workers, proplists:get_value(workers, Opts, DefaultWorkers)}],
+	       {schedulers, proplists:get_value(schedulers, Opts, DefaultSchedulers)}],
 
     do_queue_add(QueueName, NewOpts).
 
@@ -60,7 +60,7 @@ do_queue_add(QueueName, Opts) ->
     QueueID = proplists:get_value(queue_id, Opts),
     Type = proplists:get_value(type, Opts),
     Persist = proplists:get_value(persist, Opts),
-    Workers = proplists:get_value(workers, Opts),
+    Schedulers = proplists:get_value(schedulers, Opts),
     Storage = case proplists:get_value(persist, Opts) of
 		  true ->
 		      disc_copies;
@@ -82,10 +82,10 @@ do_queue_add(QueueName, Opts) ->
 		       queue_name = QueueName,
 		       type = Type,
 		       persist = Persist,
-		       workers = Workers},
+		       schedulers = Schedulers},
 
 	    ok = mnesia:dirty_write(Queue),
-	    {ok, _QueueWorkerPID} = queuesk_pool_sup:add_worker(Queue),
+	    {ok, _QueueSchedulerPID} = queuesk_pool_sup:add_scheduler(Queue),
 	    
 	    {ok, QueueID};
 	Else ->
@@ -146,12 +146,28 @@ queue_list() ->
 %%--------------------------------------------------------------------
 %% task_push
 %%--------------------------------------------------------------------
-task_push(QueueID, TaskPriority, TaskFunc) ->
+task_push(QueueID, TaskFunc, Opts) ->
+
+    %% @NOTE:
+    %% TaskFunc must return ok if it's task was done
+    %% correctly. Otherwise the scheduler will retry it.
+
+    {ok, DefaultTaskPriority} = queuesk_utils:get_config(default_task_priority),
+    {ok, DefaultTaskRetry} = queuesk_utils:get_config(default_task_retry),
+    {ok, DefaultTaskTimeout} = queuesk_utils:get_config(default_task_timeout),
+
+    TaskPriority = proplists:get_value(priority, Opts, DefaultTaskPriority),
+    TaskRetry = proplists:get_value(retry, Opts, DefaultTaskRetry),
+    TaskTimeout = proplists:get_value(timeout, Opts, DefaultTaskTimeout),
+
     TaskRec = #qsk_queue_record{priority = {TaskPriority, ?NOW_TIMESTAMP},
+				retry = TaskRetry,
+				timeout = TaskTimeout,
 				task = TaskFunc,
 				queue_id = QueueID},
+
     ok = mnesia:dirty_write(?QUEUE_REC(TaskRec)),
-    ok = queuesk_pool_worker:submit_task(QueueID, TaskRec),
+    ok = queuesk_pool_scheduler:submit_task(QueueID, TaskRec),
     ok.
 
 %%--------------------------------------------------------------------

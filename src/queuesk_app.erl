@@ -45,8 +45,16 @@ init_database() ->
     mnesia:create_table(qsk_queue_registery, 
 			[{type, ordered_set},
 			 {disc_copies, [node()]},
-			 {attributes, record_info(fields, qsk_queue_registery)}]),
+			 {attributes, record_info(fields, 
+						  qsk_queue_registery)}]),
 
-    mnesia:wait_for_tables([qsk_queue_registery], 5000),
+    mnesia:create_table(qsk_queue_failed_record,
+			[{type, bag},
+			 {disc_only_copies, [node()]},
+			 {attributes, record_info(fields, 
+						  qsk_queue_failed_record)}]),
+
+    mnesia:wait_for_tables([qsk_queue_registery,
+			    qsk_queue_failed_record], 5000),
 
     ok.

@@ -2,7 +2,7 @@
 -behaviour(supervisor).
 
 -export([start_link/0,
-	 add_worker/1,
+	 add_scheduler/1,
 	 init/1]).
 
 %%===================================================================
@@ -16,9 +16,9 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %%--------------------------------------------------------------------
-%% add_worker
+%% add_scheduler
 %%--------------------------------------------------------------------
-add_worker(Queue) ->
+add_scheduler(Queue) ->
     supervisor:start_child(?MODULE, [Queue]).
 
 %%===================================================================
@@ -31,10 +31,10 @@ add_worker(Queue) ->
 init([]) ->
     {ok, {{simple_one_for_one, 5, 10},
 	  [
-	   {queuesk_pool_worker,
-	    {queuesk_pool_worker, start_link, []},
+	   {queuesk_pool_scheduler,
+	    {queuesk_pool_scheduler, start_link, []},
 	    permanent,
 	    3000,
 	    worker,
-	    [queuesk_pool_worker]}
+	    [queuesk_pool_scheduler]}
 	  ]}}.

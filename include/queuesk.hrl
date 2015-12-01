@@ -5,17 +5,22 @@
 %%--------------------------------------------------------------------
 %% qsk_queue_registery
 %%--------------------------------------------------------------------
--record(qsk_queue_registery, {queue_name, queue_id, type, persist, workers}).
+-record(qsk_queue_registery, {queue_name, queue_id, type, persist, schedulers}).
 
 %%--------------------------------------------------------------------
 %% qsk_queue_schema
 %%--------------------------------------------------------------------
--record(qsk_queue_schema, {priority, task}).
+-record(qsk_queue_schema, {priority, task, retry, timeout}).
 
 %%--------------------------------------------------------------------
 %% qsk_queue_record
 %%--------------------------------------------------------------------
--record(qsk_queue_record, {priority, task, queue_id}).
+-record(qsk_queue_record, {priority, task, retry, timeout, queue_id}).
+
+%%--------------------------------------------------------------------
+%% qsk_queue_failed_record
+%%--------------------------------------------------------------------
+-record(qsk_queue_failed_record, {queue_id, qsk_queue_record, reason, time}).
 
 %%===================================================================
 %% Macros
@@ -26,7 +31,9 @@
 %%--------------------------------------------------------------------
 -define(QUEUE_REC(R), {R#qsk_queue_record.queue_id,
 		       R#qsk_queue_record.priority,
-		       R#qsk_queue_record.task}).
+		       R#qsk_queue_record.task,
+		       R#qsk_queue_record.retry,
+		       R#qsk_queue_record.timeout}).
 
 %%--------------------------------------------------------------------
 %% supervisor child
@@ -38,3 +45,15 @@
 %% now timestamp
 %%--------------------------------------------------------------------
 -define(NOW_TIMESTAMP, now()).
+
+%%--------------------------------------------------------------------
+%% debug
+%%--------------------------------------------------------------------
+-define(DEBUG(String, Args), begin
+				 case queuesk_utils:get_config(mode) of
+				     {ok, development} ->
+					 error_logger:info_msg(String ++ "~n", Args);
+				     _ ->
+					 dont
+				 end
+			     end).

@@ -10,5 +10,5 @@ clean:
 	rm -rf ./Mnesia.nonode@nohost
 	rm -rf ./ebin/*
 
-live: build
-	erl -pa ebin deps/*/ebin -s queuesk
+debug: build
+	erl -pa ebin deps/*/ebin -s queuesk -boot start_sasl
