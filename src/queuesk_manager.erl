@@ -32,8 +32,7 @@ start_link() ->
 init([]) ->
     
     ok = init_schedulers_pool(),
-
-    %% @TODO: check if there are remaining tasks from last halt
+    ok = run_remaining_tasks(),
 
     {ok, undefined}.
 
@@ -80,4 +79,30 @@ init_schedulers_pool() ->
 	 queuesk_pool_sup:add_scheduler(Queue)
      end || Queue <- Queues],
     
+    ok.
+
+%%--------------------------------------------------------------------
+%% run_remaining_tasks
+%%--------------------------------------------------------------------
+run_remaining_tasks() ->
+    
+    Queues = queuesk:queue_list(),
+    [begin
+
+	 QueueID = Queue#qsk_queue_registery.queue_id,
+	 Acc = 0,
+	 mnesia:activity(
+	   transaction,
+	   fun() -> 
+		   mnesia:foldl(
+		     fun(TaskRec, _) -> 
+			     queuesk_pool_scheduler:submit_task(
+			       QueueID, ?GENERIC_QUEUE_REC(TaskRec))
+		     end, 
+		     Acc, 
+		     QueueID) 
+	   end)
+	     
+     end || Queue <- Queues],
+  
     ok.

@@ -166,7 +166,7 @@ task_push(QueueID, TaskFunc, Opts) ->
 				task = TaskFunc,
 				queue_id = QueueID},
 
-    ok = mnesia:dirty_write(?QUEUE_REC(TaskRec)),
+    ok = mnesia:dirty_write(?SPECIFIC_QUEUE_REC(TaskRec)),
     ok = queuesk_pool_scheduler:submit_task(QueueID, TaskRec),
     ok.
 

@@ -27,13 +27,26 @@
 %%===================================================================
 
 %%--------------------------------------------------------------------
-%% queue record
+%% specific queue record
 %%--------------------------------------------------------------------
--define(QUEUE_REC(R), {R#qsk_queue_record.queue_id,
-		       R#qsk_queue_record.priority,
-		       R#qsk_queue_record.task,
-		       R#qsk_queue_record.retry,
-		       R#qsk_queue_record.timeout}).
+-define(SPECIFIC_QUEUE_REC(Rec), {Rec#qsk_queue_record.queue_id,
+				  Rec#qsk_queue_record.priority,
+				  Rec#qsk_queue_record.task,
+				  Rec#qsk_queue_record.retry,
+				  Rec#qsk_queue_record.timeout}).
+
+%%--------------------------------------------------------------------
+%% generic queue record
+%%--------------------------------------------------------------------
+-define(GENERIC_QUEUE_REC(Rec), 
+	begin 
+	    {QueueID, Priority, Task, Retry, Timeout} = Rec,
+	    #qsk_queue_record{priority = Priority,
+			      task = Task, 
+			      retry = Retry, 
+			      timeout = Timeout,
+			      queue_id = QueueID}
+	end).
 
 %%--------------------------------------------------------------------
 %% supervisor child

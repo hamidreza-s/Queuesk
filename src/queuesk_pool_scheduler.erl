@@ -23,9 +23,9 @@ start_link(Queue) ->
 %% init
 %%--------------------------------------------------------------------
 init(Parent, Queue) ->
-    proc_lib:init_ack({ok, Parent}),    
     SchedulerRef = Queue#qsk_queue_registery.queue_id,
     register(SchedulerRef, self()),
+    proc_lib:init_ack({ok, Parent}),    
     loop(#state{scheduler_ref = SchedulerRef, 
 		parent_pid = Parent,
 		queue_rec = Queue}).
@@ -150,10 +150,10 @@ do_run_task(Task, _State) ->
     ?DEBUG("queuesk_pool_scheduler:do_run_task:begin", []),
     TaskFunc = Task#qsk_queue_record.task,
     case apply(TaskFunc, []) of
-	ok ->
-	    ?DEBUG("queuesk_pool_scheduler:do_run_task:exit:ok", []),
-	    exit(done);
-	Reason ->
-	    ?DEBUG("queuesk_pool_scheduler:do_run_task:exit:{~p}", [Reason]),
-	    exit(Reason)
+    	ok ->
+    	    ?DEBUG("queuesk_pool_scheduler:do_run_task:exit:ok", []),
+    	    exit(done);
+    	Reason ->
+    	    ?DEBUG("queuesk_pool_scheduler:do_run_task:exit:{~p}", [Reason]),
+    	    exit(Reason)
     end.
