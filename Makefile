@@ -12,3 +12,9 @@ clean:
 
 debug: build
 	erl -pa ebin deps/*/ebin -s queuesk -boot start_sasl
+
+live: build
+	erl -pa ebin deps/*/ebin -s queuesk
+
+todo:
+	@grep -ir "@todo" ./src
