@@ -17,6 +17,13 @@
 
 -include("queuesk.hrl").
 
+-type queue_opts() :: {persist, true | false}.
+-type task_func() :: fun(() -> nok | ok).
+-type task_id() :: {integer(), erlang:timestamp()}.
+-type task_opts() :: {priority, integer()} 
+		   | {retry, integer()} 
+		   | {timeout, integer()}.
+
 %%===================================================================
 %% Queue API
 %%===================================================================
@@ -36,6 +43,7 @@ stop() ->
 %%--------------------------------------------------------------------
 %% queue_add
 %%--------------------------------------------------------------------
+-spec queue_add(QueueName :: atom(), Opts :: [queue_opts()]) -> ok.
 queue_add(QueueName, Opts) 
   when is_atom(QueueName),
        is_list(Opts) ->
@@ -97,6 +105,7 @@ do_queue_add(QueueName, Opts) ->
 %%--------------------------------------------------------------------
 %% queue_remove
 %%--------------------------------------------------------------------
+-spec queue_remove(QueueName :: atom()) -> ok.
 queue_remove(QueueName) ->
     {ok, QueueID} = queue_get_id(QueueName),
     {atomic, ok} = mnesia:delete_table(QueueID),
@@ -106,6 +115,7 @@ queue_remove(QueueName) ->
 %%--------------------------------------------------------------------
 %% queue_get
 %%--------------------------------------------------------------------
+-spec queue_get(QueueName :: atom()) -> {ok, QueueRecord :: #qsk_queue_registery{}} | not_exist.
 queue_get(QueueName) ->
     case mnesia:dirty_read({qsk_queue_registery, QueueName}) of
 	[QueueRec] ->
@@ -117,6 +127,7 @@ queue_get(QueueName) ->
 %%--------------------------------------------------------------------
 %% queue_get_id
 %%--------------------------------------------------------------------
+-spec queue_get_id(QueueName :: atom()) -> {ok, QueueID :: atom()} | not_exit.
 queue_get_id(QueueName) ->
     case queue_get(QueueName) of
 	{ok, #qsk_queue_registery{queue_id = QueueID}} ->
@@ -127,7 +138,7 @@ queue_get_id(QueueName) ->
 
 %%--------------------------------------------------------------------
 %% queue_make_id
-%%--------------------------------------------------------------------
+%%-------------------------------------------------------------------
 queue_make_id(QueueName) ->
     {ok, QueueIDPrefix} = queuesk_utils:get_config(queue_id_prefix),    
     list_to_atom(
@@ -138,6 +149,7 @@ queue_make_id(QueueName) ->
 %%--------------------------------------------------------------------
 %% queue_list
 %%--------------------------------------------------------------------
+-spec queue_list() -> [#qsk_queue_registery{}].
 queue_list() ->
     mnesia:dirty_select(qsk_queue_registery, [{'_',[],['$_']}]).
 
@@ -148,6 +160,7 @@ queue_list() ->
 %%--------------------------------------------------------------------
 %% task_push
 %%--------------------------------------------------------------------
+-spec task_push(QueueID :: atom(), Func :: task_func(), Opts :: [task_opts()]) -> ok.
 task_push(QueueID, TaskFunc, Opts) ->
 
     %% @NOTE:
@@ -178,6 +191,7 @@ task_push(QueueID, TaskFunc, Opts) ->
 %%--------------------------------------------------------------------
 %% task_pop
 %%--------------------------------------------------------------------
+-spec task_pop(QueueID :: atom()) -> #qsk_queue_record{} | empty.
 task_pop(QueueID) ->
     Key = mnesia:dirty_first(QueueID),
     mnesia:activity(
@@ -195,6 +209,7 @@ task_pop(QueueID) ->
 %%--------------------------------------------------------------------
 %% task_peek
 %%--------------------------------------------------------------------
+-spec task_peek(QueueID :: atom()) -> #qsk_queue_record{} | empty.
 task_peek(QueueID) ->
     Key = mnesia:dirty_first(QueueID),
     case mnesia:dirty_read(QueueID, Key) of
@@ -207,5 +222,6 @@ task_peek(QueueID) ->
 %%--------------------------------------------------------------------
 %% task_remove
 %%--------------------------------------------------------------------
+-spec task_remove(QueueID :: atom(), Key :: task_id()) -> ok.
 task_remove(QueueID, Key) ->
     mnesia:dirty_delete({QueueID, Key}).
