@@ -17,4 +17,10 @@ live: build
 	erl -pa ebin deps/*/ebin -s queuesk
 
 todo:
+	@echo "[+] TODOs in general:"
+	@echo "---------------------"
+	@cat ./TODO.md
+	@echo
+	@echo "[+] TODOs in source:"
+	@echo "--------------------"
 	@grep -ir "@todo" ./src

@@ -40,6 +40,8 @@ queue_add(QueueName, Opts)
   when is_atom(QueueName),
        is_list(Opts) ->
     
+    %% @TODO: don't let use reserved names like 'registery', 'record' and 'failed_record'
+
     {ok, DefaultType} = queuesk_utils:get_config(default_queue_type),
     {ok, DefaultPersist} = queuesk_utils:get_config(default_queue_persist),
     {ok, DefaultSchedulers} = queuesk_utils:get_config(default_queue_schedulers),
@@ -151,6 +153,9 @@ task_push(QueueID, TaskFunc, Opts) ->
     %% @NOTE:
     %% TaskFunc must return ok if it's task was done
     %% correctly. Otherwise the scheduler will retry it.
+
+    %% @TODO: add api for pushing MFAs (local or external),
+    %% in addition to FUN terms for efficiency
 
     {ok, DefaultTaskPriority} = queuesk_utils:get_config(default_task_priority),
     {ok, DefaultTaskRetry} = queuesk_utils:get_config(default_task_retry),
