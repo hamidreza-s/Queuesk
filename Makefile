@@ -1,10 +1,10 @@
 all: build
 
 build: deps
-	rebar compile
+	./rebar compile
 
 deps:
-	rebar get-deps
+	./rebar get-deps
 
 clean:
 	rm -rf ./Mnesia.nonode@nohost
