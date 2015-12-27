@@ -1,14 +1,14 @@
 Queuesk
 ======
 
-Queuesk (pronounce it like kiosk) is a lightweight priority task queue which can be used inside your Erlang application as a dependency. The order of executing tasks is based on their priority level. Also you can set timeout and a number for retrying the tasks which would fail or crash when executing. Each queue's tasks can be durable or not durable after restart.
+Queuesk (pronounce it like kiosk) is a lightweight priority task queue which can be used inside your Erlang application as a dependency. The order of executing tasks is based on their priority levels. Also you can set timeout and a number for retrying the tasks which would fail or crash when executing. Each queue's tasks can be durable or not durable after restart.
 
 Quick Start
 ----
 
 **Installation**
 
-On a machine with and installed Erlang/OTP R15 or newer, just clone this repo and go through following steps:
+On a machine with an installed Erlang/OTP R15 or newer, just clone this repo and go through following steps:
 
 ```bash
 $ git clone https://github.com/bisphone/Queuesk.git
@@ -16,7 +16,7 @@ $ cd Queuesk
 $ make
 ```
 
-Also for using it as a dependency in your project using `rebar` add the following code snippet to your `rebar.config` file:
+Also for using it as a dependency in your project using `rebar`, add the following code snippet to your `rebar.config` file:
 
 ```erlang
 {deps, [
@@ -44,7 +44,7 @@ ok = queuesk:task_push(QueueID,
                        [{priority, 2}, {retry, 2}, {timeout, 3000}])
 ```
 
-The retry and timeout parameters help to tailor each task to the needs and restrictions of our usecase.
+The retry and timeout parameters help to tailor each task to the needs and restrictions of our usecases.
 
 Configuration
 ----
@@ -73,11 +73,9 @@ The main APIs are exported via `queuesk` module as follows:
 
 ```erlang
 -type queue_opts() :: {persist, true | false}.
--type task_func() :: fun(() -> nok | ok).
 -type task_id() :: {integer(), erlang:timestamp()}.
--type task_opts() :: {priority, integer()} 
-		   | {retry, integer()} 
-		   | {timeout, integer()}.
+-type task_opts() :: {priority, integer()} | {retry, integer()} | {timeout, integer()}.
+-type task_func() :: (fun() -> nok | ok).
 ```
 
 **Queue API**
