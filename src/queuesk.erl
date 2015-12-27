@@ -197,7 +197,12 @@ task_pop(QueueID) ->
 %%--------------------------------------------------------------------
 task_peek(QueueID) ->
     Key = mnesia:dirty_first(QueueID),
-    mnesia:dirty_read(QueueID, Key).
+    case mnesia:dirty_read(QueueID, Key) of
+	[Rec] ->
+	    Rec;
+	[] ->
+	    empy
+    end.
 
 %%--------------------------------------------------------------------
 %% task_remove
