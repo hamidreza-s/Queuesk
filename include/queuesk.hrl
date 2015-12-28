@@ -64,7 +64,7 @@
 %%--------------------------------------------------------------------
 -define(DEBUG(String, Args), begin
 				 case queuesk_utils:get_config(mode) of
-				     {ok, development} ->
+				     {ok, debug} ->
 					 error_logger:info_msg(String ++ "~n", Args);
 				     _ ->
 					 dont

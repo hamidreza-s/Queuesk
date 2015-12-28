@@ -9,7 +9,7 @@
                  ]},
   {mod, {queuesk_app, []}},
   {env, [
-	 {mode, development},
+	 {mode, development}, %% development | debug | production
 	 {queue_id_prefix, qsk_queue},
 	 {default_queue_type, priority},
 	 {default_queue_persist, false},
