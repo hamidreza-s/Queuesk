@@ -1,0 +1,8 @@
+sudo: false
+language: erlang
+otp_release:
+  - R15B03
+  - R16B03
+  - 17.5
+  - 18.2
+script: make test

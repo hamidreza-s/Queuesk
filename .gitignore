@@ -2,3 +2,4 @@
 ebin
 Mnesia.nonode@nohost
 .rebar
+*~
