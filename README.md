@@ -1,7 +1,7 @@
 Queuesk
 ======
 
-Queuesk (pronounce it like kiosk) is a lightweight priority task queue which can be used inside your Erlang application as a dependency. The order of executing tasks is based on their priority levels. Also you can set timeout and a number for retrying the tasks which would fail or crash when executing. Each queue's tasks can be durable or not durable after restart.
+Queuesk (pronounce it like kiosk /ˈkiːɑːsk/) is a lightweight priority task queue which can be used inside your Erlang application as a dependency. The order of executing tasks is based on their priority levels. Also you can set timeout and a number for retrying the tasks which would fail or crash when executing. Each queue's tasks can be durable or not durable after restart.
 
 Quick Start
 ----
@@ -33,7 +33,7 @@ Let's imagine we need a task queue for newly registered users in our website for
 {ok, QueueID} = queuesk:queue_add(new_users, [{persist, true}]).
 ```
 
-In this scenario each user must receive a welcome email and also her friends must be notified about her registeration. Because sending welcome email has more priority, we set its priority higher.
+In this scenario each user must receive a welcome email and also her friends must be notified about her registration. Because sending welcome email has more priority, we set its priority higher.
 
 ```erlang
 ok = queuesk:task_push(QueueID,
